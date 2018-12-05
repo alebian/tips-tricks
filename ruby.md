@@ -279,3 +279,45 @@ a
 b
 #=> {:one=>{:two=>[1]}}
 ```
+
+## Pass arguments to the shorthand way of calling map
+
+Ruby has a short way to call map, making this two equivalent:
+
+```
+["1", "2", "3"].map { |number| number.to_i } #=> [1, 2, 3]
+
+["1", "2", "3"].map(&:to_i) #=> [1, 2, 3]
+```
+
+The problem is that we can't use the shorthand syntax for methods that receive arguments:
+
+```
+[["Jane", 1], ["Doe", 2]].map { |pair| pair.join(': ') }.join("\n") #=> "Jane: 1\nDoe: 2"
+
+[["Jane", 1], ["Doe", 2]].map(&:join(': ')).join("\n")
+# SyntaxError ((irb):1: syntax error, unexpected '(', expecting ')')
+# ...], ["Doe", 2]].map(&:join(': ')).join("\n")
+# ...                              ^
+
+[["Jane", 1], ["Doe", 2]].map(&:join, ': ').join("\n")
+# SyntaxError ((irb):1: syntax error, unexpected ',', expecting ')')
+# ...e", 1], ["Doe", 2]].map(&:join, ': ').join("\n")
+# ...                              ^
+```
+
+One way to achieve this would be by monkey patching the symbol class:
+
+```
+class Symbol
+  def with(*args, &block)
+    ->(caller, *rest) { caller.send(self, *rest, *args, &block) }
+  end
+end
+```
+
+This way we can do:
+
+```
+[["Jane", 1], ["Doe", 2]].map(&:join.with(': ')).join("\n") #=> "Jane: 1\nDoe: 2"
+```
