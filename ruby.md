@@ -184,6 +184,12 @@ class Hash
     def compact!
       reject! { |_, value| value.nil? }
     end
+    
+    def contains?(other_hash)
+      return false if other_hash.nil?
+
+      merge(other_hash) == self
+    end
   end
 end
 
